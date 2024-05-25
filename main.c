@@ -27,16 +27,11 @@ typedef enum {
 
 typedef struct {
     int x, y;
-} BoardPosition;
-
-typedef struct {
-    int x, y;
     TileTypes tile_type;
+    bool falling;
 } BoardTile;
 
 BoardTile board[BOARD_HEIGHT][BOARD_WIDTH] = {0};
-
-int find_hole(BoardPosition positions[]);
 
 void init_game(void) {
     tile_attack = LoadTexture("resources/tile_attack.png");
@@ -51,38 +46,20 @@ void init_game(void) {
     }
 }
 
-typedef struct {
-    int from;
-    int to;
-    int displacement;
-    bool falling;
-} ColumnFalling;
-
-ColumnFalling colums_falling[BOARD_WIDTH] = { 0 };
-
 void update_game(void) {
-    static bool running_gravity = false;
-    static int holes = 0;
-    static BoardPosition positions[BOARD_HEIGHT * BOARD_WIDTH] = { 0 };
-
     if (!game_over) {
-        if (!running_gravity) {
-            holes = find_hole(positions);
-            printf("Holes found %d\n", holes);
-            if (holes > 0) {
-                running_gravity = true;
-            }
-        } else {
-            for (int x = 0; x < holes; x++) {
-                printf("Hole at %d %d\n", positions[x].x, positions[x].y);
-                colums_falling[positions[x].x].from = positions[x].y;
-                colums_falling[positions[x].x].displacement = 0;
-                colums_falling[positions[x].x].falling = true;
-            }
-            holes = 0;
+        for (int y = BOARD_HEIGHT - 2; y >= 0; y--) {
             for (int x = 0; x < BOARD_WIDTH; x++) {
-                if (colums_falling[x].falling == true) {
-                    colums_falling[x].displacement += 1;
+                if (board[x][y].tile_type != EMPTY && board[x][y + 1].tile_type == EMPTY && board[x][y].falling == false) {
+                    board[x][y].falling = true;
+                }
+                if (board[x][y].falling == true) {
+                    board[x][y].y++;
+                    if (board[x][y].y % CELL_SIZE == 0) {
+                        board[x][y].falling = false;
+                        board[x][y + 1].tile_type = board[x][y].tile_type;
+                        board[x][y].tile_type = EMPTY;
+                    }
                 }
             }
         }
@@ -124,22 +101,6 @@ void draw_game(void) {
     }
 
     EndDrawing();
-}
-
-int find_hole(BoardPosition positions[]) {
-    bool columns_found[BOARD_WIDTH] = { false };
-    int count = 0;
-    for (int y = 1; y < BOARD_HEIGHT; y++) {
-        for (int x = 0; x < BOARD_WIDTH; x++) {
-            if (board[x][y].tile_type == EMPTY && columns_found[x] == false) {
-                columns_found[x] = true;
-                positions[count].x = x;
-                positions[count].y = y;
-                count++;
-            }
-        }
-    }
-    return count;
 }
 
 void update_draw_game(void) {
