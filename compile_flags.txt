@@ -1,0 +1,3 @@
+-I/opt/homebrew/Cellar/raylib/5.0/include
+-I.
+-std=c11
