@@ -37,6 +37,8 @@ Tile *board[BOARD_HEIGHT][BOARD_WIDTH] = {0};
 Tile tiles[BOARD_HEIGHT * BOARD_WIDTH] = { 0 };
 
 void init_game(void) {
+    time_t t;
+    srand((unsigned) time(&t));
     font = LoadFont("resources/fonts/mecha.png");
     tile_attack = LoadTexture("resources/tile_attack.png");
     tile_action = LoadTexture("resources/tile_action.png");
