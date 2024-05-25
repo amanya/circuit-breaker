@@ -47,18 +47,18 @@ void init_game(void) {
 }
 
 void update_game(void) {
-    if (!game_over) {
-        for (int y = BOARD_HEIGHT - 2; y >= 0; y--) {
+    if (!game_over && false) {
+        for (int y = 0; y < BOARD_HEIGHT - 1; y++) {
             for (int x = 0; x < BOARD_WIDTH; x++) {
                 if (board[x][y].tile_type != EMPTY && board[x][y + 1].tile_type == EMPTY && board[x][y].falling == false) {
                     board[x][y].falling = true;
+                    board[x][y + 1].tile_type = board[x][y].tile_type;
+                    board[x][y].tile_type = EMPTY;
                 }
                 if (board[x][y].falling == true) {
                     board[x][y].y++;
                     if (board[x][y].y % CELL_SIZE == 0) {
                         board[x][y].falling = false;
-                        board[x][y + 1].tile_type = board[x][y].tile_type;
-                        board[x][y].tile_type = EMPTY;
                     }
                 }
             }
