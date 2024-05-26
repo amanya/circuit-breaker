@@ -41,11 +41,21 @@ Tile tiles[BOARD_HEIGHT * BOARD_WIDTH] = {0};
 
 int find_empty_tile() {
     for (int i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
+        printf("%d(%d,%d)|", tiles[i].tile_type, tiles[i].x, tiles[i].y);
         if (tiles[i].tile_type == EMPTY) {
             return i;
         }
     }
     return -1;
+}
+
+bool tiles_falling() {
+    for (int i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
+        if (tiles[i].falling == true) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void init_game(void) {
@@ -55,12 +65,15 @@ void init_game(void) {
     tile_attack = LoadTexture("resources/tile_attack.png");
     tile_action = LoadTexture("resources/tile_action.png");
     tile_utility = LoadTexture("resources/tile_utility.png");
+
+    int tile_num = 0;
     for (int y = 1; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
             TileType tile_type = rand() % NUM_TILE_TYPES;
             if (tile_type != EMPTY) {
-                tiles[y * BOARD_WIDTH + x] = (Tile){ .x = x * CELL_SIZE, .y = y * CELL_SIZE, .tile_type = tile_type, .falling = false};
-                board[y][x] = &tiles[y * BOARD_WIDTH + x];
+                tiles[tile_num] = (Tile){ .x = x * CELL_SIZE, .y = y * CELL_SIZE, .tile_type = tile_type, .falling = false};
+                board[y][x] = &tiles[tile_num];
+                tile_num++;
             }
         }
     }
@@ -93,27 +106,32 @@ void update_game(void) {
                     if (board[y][x]->y >= board[y][x]->dest) {
                         board[y][x]->falling = false;
                         board[y][x]->y = board[y][x]->dest;
+                        board[y][x]->dest = 0;
+                        board[y][x]->speed = 0;
                         board[y + 1][x] = board[y][x];
                         board[y][x] = NULL;
                     }
                 }
             }
         }
-        // Add tiles
-        for (int n = 0; n < BOARD_WIDTH; n++) {
-            if (board[1][n] == NULL) {
-                int p = find_empty_tile();
-                printf("p: %d\n", p);
-                if (p >= 0) {
-                    tiles[p].tile_type = ATTACK;
-                    tiles[p].x = n * CELL_SIZE;
-                    tiles[p].y = 0;
-                    tiles[p].speed = 0;
-                    tiles[p].dest = 0;
-                    tiles[p].falling = false;
-                    board[0][n] = &tiles[p];
+        if (!tiles_falling()) {
+            // Add tiles
+            for (int n = 0; n < BOARD_WIDTH; n++) {
+                if (board[1][n] == NULL) {
+                    int p = find_empty_tile();
+                    printf("p: %d\n", p);
+                    if (p >= 0) {
+                        tiles[p].tile_type = rand() % (NUM_TILE_TYPES - 1) + 1;
+                        tiles[p].x = n * CELL_SIZE;
+                        tiles[p].y = 0;
+                        tiles[p].speed = 0;
+                        tiles[p].dest = 0;
+                        tiles[p].falling = false;
+                        board[0][n] = &tiles[p];
+                    }
                 }
             }
+            // Destroy tiles
         }
     } else {
         if (IsKeyPressed(KEY_ENTER)) {
