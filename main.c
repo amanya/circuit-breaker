@@ -105,7 +105,14 @@ int find_horizontal_matches(BoardRange *ranges) {
 }
 
 void delete_horiz_range(BoardRange range) {
-    for (int x = range.start.x; x < range.end.y; x++) {
+    for (int x = range.start.x; x <= range.end.y; x++) {
+        Tile *tile = board[range.start.y][x];
+        tile->x = 0;
+        tile->y = 0;
+        tile->tile_type = EMPTY;
+        tile->falling = false;
+        tile->speed = 0;
+        tile->dest = 0;
         board[range.start.y][x] = NULL;
     }
 }
@@ -187,9 +194,17 @@ void update_game(void) {
                 BoardRange horiz_ranges[BOARD_HEIGHT] = {0};
                 int num_horiz_ranges = find_horizontal_matches(horiz_ranges);
                 for (int n = 0; n < num_horiz_ranges; n++) {
+                    printf("Range %d from (%d,%d) to (%d,%d)\n",
+                           n,
+                           horiz_ranges[n].start.x,
+                           horiz_ranges[n].start.y,
+                           horiz_ranges[n].end.x,
+                           horiz_ranges[n].end.y);
                     delete_horiz_range(horiz_ranges[n]);
                 }
             }
+        } else {
+            printf("There are tiles falling\n");
         }
     } else {
         if (IsKeyPressed(KEY_ENTER)) {
