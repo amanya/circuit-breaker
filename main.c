@@ -19,6 +19,9 @@ static Font font;
 static Texture2D tile_attack;
 static Texture2D tile_action;
 static Texture2D tile_utility;
+static Texture2D arrow;
+
+static int cursor_row = 1;
 
 typedef enum {
     EMPTY,
@@ -157,6 +160,32 @@ void delete_vert_range(BoardRange range) {
     }
 }
 
+void rotate_row_left(int row) {
+    Tile temp = *board[row][0];
+    int n = 1;
+    for (; n < BOARD_WIDTH; n++) {
+        board[row][n - 1]->x = board[row][n]->x;
+        board[row][n - 1]->y = board[row][n]->y;
+        board[row][n - 1]->tile_type = board[row][n]->tile_type;
+    }
+    board[row][n - 1]->x = temp.x;
+    board[row][n - 1]->y = temp.y;
+    board[row][n - 1]->tile_type = temp.tile_type;
+}
+
+void rotate_row_right(int row) {
+    Tile temp = *board[row][BOARD_WIDTH - 1];
+    int n = BOARD_WIDTH - 2;
+    for (; n > 1; n--) {
+        board[row][n - 1]->x = board[row][n]->x;
+        board[row][n - 1]->y = board[row][n]->y;
+        board[row][n - 1]->tile_type = board[row][n]->tile_type;
+    }
+    board[row][n - 1]->x = temp.x;
+    board[row][n - 1]->y = temp.y;
+    board[row][n - 1]->tile_type = temp.tile_type;
+}
+
 void init_game(void) {
     time_t t;
     srand((unsigned) time(&t));
@@ -164,6 +193,7 @@ void init_game(void) {
     tile_attack = LoadTexture("resources/tile_attack.png");
     tile_action = LoadTexture("resources/tile_action.png");
     tile_utility = LoadTexture("resources/tile_utility.png");
+    arrow = LoadTexture("resources/arrow.png");
 
     int tile_num = 0;
     for (int y = 1; y < BOARD_HEIGHT; y++) {
@@ -180,6 +210,22 @@ void init_game(void) {
 
 void update_game(void) {
     if (!game_over && true) {
+        if (IsKeyPressed(KEY_UP)) {
+            if (cursor_row > 1) {
+                cursor_row--;
+            }
+        }
+        if (IsKeyPressed(KEY_DOWN)) {
+            if (cursor_row < BOARD_HEIGHT - 1) {
+                cursor_row++;
+            }
+        }
+        if (IsKeyPressed(KEY_LEFT)) {
+            rotate_row_left(cursor_row);
+        }
+        if (IsKeyPressed(KEY_RIGHT)) {
+            rotate_row_right(cursor_row);
+        }
         for (int y = BOARD_HEIGHT - 2; y >= 0; y--) {
             for (int x = 0; x < BOARD_WIDTH; x++) {
                 if (board[y][x] == NULL) {
@@ -201,7 +247,7 @@ void update_game(void) {
                 }
                 if (board[y][x]->falling == true) {
                     board[y][x]->y += board[y][x]->speed;
-                    board[y][x]->speed *= 1.2;
+                    board[y][x]->speed *= 1.4;
                     if (board[y][x]->y >= board[y][x]->dest) {
                         board[y][x]->falling = false;
                         board[y][x]->y = board[y][x]->dest;
@@ -241,17 +287,9 @@ void update_game(void) {
                 BoardRange vert_ranges[BOARD_WIDTH] = {0};
                 int num_vert_ranges = find_vert_matches(vert_ranges);
                 for (int n = 0; n < num_vert_ranges; n++) {
-                    printf("Range %d from (%d,%d) to (%d,%d)\n",
-                           n,
-                           vert_ranges[n].start.x,
-                           vert_ranges[n].start.y,
-                           vert_ranges[n].end.x,
-                           vert_ranges[n].end.y);
                     delete_vert_range(vert_ranges[n]);
                 }
             }
-        } else {
-            printf("There are tiles falling\n");
         }
     } else {
         if (IsKeyPressed(KEY_ENTER)) {
@@ -266,7 +304,7 @@ void draw_game(void) {
     ClearBackground(BLACK);
 
     uint16_t pos_x = screen_width / 2 - (HALF_CELL_SIZE * BOARD_WIDTH);
-    uint16_t pos_y = screen_height / 2 - (HALF_CELL_SIZE * BOARD_HEIGHT);
+    uint16_t pos_y = screen_height / 2 - (HALF_CELL_SIZE * (BOARD_HEIGHT + 1));
 
     for (int y = 0; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
@@ -291,13 +329,12 @@ void draw_game(void) {
                 const char *text = TextFormat("%d|%d\n(%d,%d)\n(%d,%d)", board[y][x]->tile_type, board[y][x]->falling, x, y, board[y][x]->x, board[y][x]->y);
                 Vector2 text_size = MeasureTextEx(font, text, font.baseSize, 2);
                 DrawTextEx(font, text, (Vector2){pos_x + board[y][x]->x + HALF_CELL_SIZE - (text_size.x / 2), pos_y + board[y][x]->y + HALF_CELL_SIZE - (text_size.y / 2)}, font.baseSize, 2.0, WHITE);
-            } else {
-                const char *text = TextFormat("NULL\n(%d,%d)", x, y);
-                Vector2 text_size = MeasureTextEx(font, text, font.baseSize, 2);
-                DrawTextEx(font, text, (Vector2){pos_x + x * CELL_SIZE + HALF_CELL_SIZE - (text_size.x / 2), pos_y + y * CELL_SIZE + HALF_CELL_SIZE - (text_size.y / 2)}, font.baseSize, 2.0, WHITE);
             }
         }
     }
+
+    DrawTextureEx(arrow, (Vector2){pos_x, pos_y + CELL_SIZE * (cursor_row + 1)}, 180, 1, WHITE);
+    DrawTexture(arrow, pos_x + CELL_SIZE * BOARD_WIDTH, pos_y + CELL_SIZE * cursor_row, WHITE);
 
     EndDrawing();
 }
