@@ -77,7 +77,7 @@ typedef struct {
     BoardPos end;
 } BoardRange;
 
-int find_horizontal_matches(BoardRange *ranges) {
+int find_horiz_matches(BoardRange *ranges) {
     int ranges_cnt = 0;
     for (int y = 1; y < BOARD_HEIGHT; y++) {
         TileType type = board[y][0]->tile_type;
@@ -104,8 +104,35 @@ int find_horizontal_matches(BoardRange *ranges) {
     return ranges_cnt;
 }
 
+int find_vert_matches(BoardRange *ranges) {
+    int ranges_cnt = 0;
+    for (int x = 0; x < BOARD_WIDTH; x++) {
+        TileType type = board[1][x]->tile_type;
+        ranges[ranges_cnt].start = (BoardPos){x, 1};
+        int tiles_matching = 1;
+        for (int y = 2; y < BOARD_HEIGHT; y++) {
+            if (board[y][x]->tile_type == type) {
+                tiles_matching++;
+                ranges[ranges_cnt].end = (BoardPos){x, y};
+            } else {
+                if (tiles_matching >= 3) {
+                    ranges_cnt++;
+                    ranges[ranges_cnt].end = (BoardPos){x, y};
+                }
+                type = board[y][x]->tile_type;
+                tiles_matching = 1;
+                ranges[ranges_cnt].start = (BoardPos){x, y};
+            }
+        }
+        if (tiles_matching >= 3) {
+            ranges_cnt++;
+        }
+    }
+    return ranges_cnt;
+}
+
 void delete_horiz_range(BoardRange range) {
-    for (int x = range.start.x; x <= range.end.y; x++) {
+    for (int x = range.start.x; x <= range.end.x; x++) {
         Tile *tile = board[range.start.y][x];
         tile->x = 0;
         tile->y = 0;
@@ -114,6 +141,19 @@ void delete_horiz_range(BoardRange range) {
         tile->speed = 0;
         tile->dest = 0;
         board[range.start.y][x] = NULL;
+    }
+}
+
+void delete_vert_range(BoardRange range) {
+    for (int y = range.start.y; y <= range.end.y; y++) {
+        Tile *tile = board[y][range.start.x];
+        tile->x = 0;
+        tile->y = 0;
+        tile->tile_type = EMPTY;
+        tile->falling = false;
+        tile->speed = 0;
+        tile->dest = 0;
+        board[y][range.start.x] = NULL;
     }
 }
 
@@ -192,15 +232,22 @@ void update_game(void) {
             // Destroy tiles
             if (!empty_tiles_in_board()) {
                 BoardRange horiz_ranges[BOARD_HEIGHT] = {0};
-                int num_horiz_ranges = find_horizontal_matches(horiz_ranges);
+                int num_horiz_ranges = find_horiz_matches(horiz_ranges);
                 for (int n = 0; n < num_horiz_ranges; n++) {
+                    delete_horiz_range(horiz_ranges[n]);
+                }
+            }
+            if (!empty_tiles_in_board()) {
+                BoardRange vert_ranges[BOARD_WIDTH] = {0};
+                int num_vert_ranges = find_vert_matches(vert_ranges);
+                for (int n = 0; n < num_vert_ranges; n++) {
                     printf("Range %d from (%d,%d) to (%d,%d)\n",
                            n,
-                           horiz_ranges[n].start.x,
-                           horiz_ranges[n].start.y,
-                           horiz_ranges[n].end.x,
-                           horiz_ranges[n].end.y);
-                    delete_horiz_range(horiz_ranges[n]);
+                           vert_ranges[n].start.x,
+                           vert_ranges[n].start.y,
+                           vert_ranges[n].end.x,
+                           vert_ranges[n].end.y);
+                    delete_vert_range(vert_ranges[n]);
                 }
             }
         } else {
