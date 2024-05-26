@@ -41,12 +41,22 @@ Tile tiles[BOARD_HEIGHT * BOARD_WIDTH] = {0};
 
 int find_empty_tile() {
     for (int i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
-        printf("%d(%d,%d)|", tiles[i].tile_type, tiles[i].x, tiles[i].y);
         if (tiles[i].tile_type == EMPTY) {
             return i;
         }
     }
     return -1;
+}
+
+bool empty_tiles_in_board() {
+    for (int y = 1; y < BOARD_HEIGHT; y++) {
+        for (int x = 0; x < BOARD_WIDTH; x++) {
+            if (board[y][x] == NULL) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool tiles_falling() {
@@ -56,6 +66,48 @@ bool tiles_falling() {
         }
     }
     return false;
+}
+
+typedef struct {
+    int x, y;
+} BoardPos;
+
+typedef struct {
+    BoardPos start;
+    BoardPos end;
+} BoardRange;
+
+int find_horizontal_matches(BoardRange *ranges) {
+    int ranges_cnt = 0;
+    for (int y = 1; y < BOARD_HEIGHT; y++) {
+        TileType type = board[y][0]->tile_type;
+        ranges[ranges_cnt].start = (BoardPos){0, y};
+        int tiles_matching = 1;
+        for (int x = 1; x < BOARD_WIDTH; x++) {
+            if (board[y][x]->tile_type == type) {
+                tiles_matching++;
+                ranges[ranges_cnt].end = (BoardPos){x, y};
+            } else {
+                if (tiles_matching >= 3) {
+                    ranges_cnt++;
+                    ranges[ranges_cnt].end = (BoardPos){x, y};
+                }
+                type = board[y][x]->tile_type;
+                tiles_matching = 1;
+                ranges[ranges_cnt].start = (BoardPos){x, y};
+            }
+        }
+        if (tiles_matching >= 3) {
+            ranges_cnt++;
+        }
+    }
+    return ranges_cnt;
+}
+
+void delete_horiz_range(BoardRange range) {
+    for (int x = range.start.x; x < range.end.y; x++) {
+        board[range.start.y][x] = NULL;
+    }
 }
 
 void init_game(void) {
@@ -119,7 +171,6 @@ void update_game(void) {
             for (int n = 0; n < BOARD_WIDTH; n++) {
                 if (board[1][n] == NULL) {
                     int p = find_empty_tile();
-                    printf("p: %d\n", p);
                     if (p >= 0) {
                         tiles[p].tile_type = rand() % (NUM_TILE_TYPES - 1) + 1;
                         tiles[p].x = n * CELL_SIZE;
@@ -132,6 +183,13 @@ void update_game(void) {
                 }
             }
             // Destroy tiles
+            if (!empty_tiles_in_board()) {
+                BoardRange horiz_ranges[BOARD_HEIGHT] = {0};
+                int num_horiz_ranges = find_horizontal_matches(horiz_ranges);
+                for (int n = 0; n < num_horiz_ranges; n++) {
+                    delete_horiz_range(horiz_ranges[n]);
+                }
+            }
         }
     } else {
         if (IsKeyPressed(KEY_ENTER)) {
