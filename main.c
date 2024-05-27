@@ -149,9 +149,21 @@ void delete_vert_range(BoardRange range) {
 }
 
 void rotate_row_left(int row) {
+    Tile temp = board[row][0];
+    int n = 1;
+    for (; n < BOARD_WIDTH; n++) {
+        board[row][n - 1].tile_type = board[row][n].tile_type;
+    }
+    board[row][n - 1].tile_type = temp.tile_type;
 }
 
 void rotate_row_right(int row) {
+    Tile temp = board[row][BOARD_WIDTH - 1];
+    int n = BOARD_WIDTH - 2;
+    for (; n >= 0; n--) {
+        board[row][n + 1].tile_type = board[row][n].tile_type;
+    }
+    board[row][0].tile_type = temp.tile_type;
 }
 
 void init_game(void) {
