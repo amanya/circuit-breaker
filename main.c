@@ -167,6 +167,16 @@ void rotate_row_right(int row) {
     board[row][0].tile_type = temp.tile_type;
 }
 
+int find_row_dest(int row, int start) {
+    int dest = start;
+    for (; dest < BOARD_HEIGHT; dest++) {
+        if (board[dest + 1][row].tile_type != EMPTY) {
+            break;
+        }
+    }
+    return dest;
+}
+
 void init_game(void) {
     time_t t;
     srand((unsigned) time(&t));
@@ -210,13 +220,13 @@ void update_game(void) {
                 if (board[y + 1][x].tile_type == EMPTY && board[y][x].falling == false) {
                     board[y][x].falling = true;
                     board[y][x].speed = 1;
-                    board[y][x].row_dest = (y + 1) * CELL_SIZE;
+                    board[y][x].row_dest = find_row_dest(x, y) * CELL_SIZE;
                     if (y > 0) {
                         for (int n = y - 1; n >= 0; n--) {
                             if (board[n][x].tile_type != EMPTY) {
                                 board[n][x].falling = true;
                                 board[n][x].speed = 1;
-                                board[n][x].row_dest = (n + 1) * CELL_SIZE;
+                                board[n][x].row_dest = find_row_dest(x, n) * CELL_SIZE;
                             }
                         }
                     }
