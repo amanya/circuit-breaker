@@ -35,9 +35,11 @@ typedef enum {
 typedef struct {
     int x, y;
     int row_dest; 
-    float speed;
+    float hspeed;
+    float vspeed;
     TileType tile_type;
     bool falling;
+    bool hrotating;
 } Tile;
 
 Tile board[BOARD_HEIGHT][BOARD_WIDTH] = {0};
@@ -133,7 +135,7 @@ void delete_horiz_range(BoardRange range) {
         board[range.start.y][x].y = 0;
         board[range.start.y][x].tile_type = EMPTY;
         board[range.start.y][x].falling = false;
-        board[range.start.y][x].speed = 0;
+        board[range.start.y][x].hspeed = 0;
         board[range.start.y][x].row_dest = 0;
     }
 }
@@ -144,7 +146,7 @@ void delete_vert_range(BoardRange range) {
         board[y][range.start.x].y = 0;
         board[y][range.start.x].tile_type = EMPTY;
         board[y][range.start.x].falling = false;
-        board[y][range.start.x].speed = 0;
+        board[y][range.start.x].hspeed = 0;
         board[y][range.start.x].row_dest = 0;
     }
 }
@@ -219,26 +221,26 @@ void update_game(void) {
                 }
                 if (board[y + 1][x].tile_type == EMPTY && board[y][x].falling == false) {
                     board[y][x].falling = true;
-                    board[y][x].speed = 1;
+                    board[y][x].hspeed = 1;
                     board[y][x].row_dest = find_row_dest(x, y) * CELL_SIZE;
                     if (y > 0) {
                         for (int n = y - 1; n >= 0; n--) {
                             if (board[n][x].tile_type != EMPTY) {
                                 board[n][x].falling = true;
-                                board[n][x].speed = 1;
+                                board[n][x].hspeed = 1;
                                 board[n][x].row_dest = find_row_dest(x, n) * CELL_SIZE;
                             }
                         }
                     }
                 }
                 if (board[y][x].falling == true) {
-                    board[y][x].y += board[y][x].speed;
-                    board[y][x].speed *= 1.4;
+                    board[y][x].y += board[y][x].hspeed;
+                    board[y][x].hspeed *= 1.1 + ((float)rand()/(float)(RAND_MAX)) * 0.4;
                     if (board[y][x].y >= board[y][x].row_dest) {
                         board[y][x].falling = false;
                         board[y][x].y = board[y][x].row_dest;
                         board[y][x].row_dest = 0;
-                        board[y][x].speed = 0;
+                        board[y][x].hspeed = 0;
                         board[y + 1][x] = board[y][x];
                         board[y][x].tile_type = EMPTY;
                     }
@@ -252,7 +254,7 @@ void update_game(void) {
                     board[0][n].tile_type = rand() % (NUM_TILE_TYPES - 1) + 1;
                     board[0][n].x = n * CELL_SIZE;
                     board[0][n].y = 0;
-                    board[0][n].speed = 0;
+                    board[0][n].hspeed = 0;
                     board[0][n].row_dest = 0;
                     board[0][n].falling = false;
                 }
