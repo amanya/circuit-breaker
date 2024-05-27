@@ -39,22 +39,12 @@ typedef struct {
     bool falling;
 } Tile;
 
-Tile *board[BOARD_HEIGHT][BOARD_WIDTH] = {0};
-Tile tiles[BOARD_HEIGHT * BOARD_WIDTH] = {0};
-
-int find_empty_tile() {
-    for (int i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
-        if (tiles[i].tile_type == EMPTY) {
-            return i;
-        }
-    }
-    return -1;
-}
+Tile board[BOARD_HEIGHT][BOARD_WIDTH] = {0};
 
 bool empty_tiles_in_board() {
     for (int y = 1; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
-            if (board[y][x] == NULL) {
+            if (board[y][x].tile_type == EMPTY) {
                 return true;
             }
         }
@@ -63,9 +53,11 @@ bool empty_tiles_in_board() {
 }
 
 bool tiles_falling() {
-    for (int i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
-        if (tiles[i].falling == true) {
-            return true;
+    for (int y = 1; y < BOARD_HEIGHT; y++) {
+        for (int x = 0; x < BOARD_WIDTH; x++) {
+            if (board[y][x].falling == true) {
+                return true;
+            }
         }
     }
     return false;
@@ -83,11 +75,11 @@ typedef struct {
 int find_horiz_matches(BoardRange *ranges) {
     int ranges_cnt = 0;
     for (int y = 1; y < BOARD_HEIGHT; y++) {
-        TileType type = board[y][0]->tile_type;
+        TileType type = board[y][0].tile_type;
         ranges[ranges_cnt].start = (BoardPos){0, y};
         int tiles_matching = 1;
         for (int x = 1; x < BOARD_WIDTH; x++) {
-            if (board[y][x]->tile_type == type) {
+            if (board[y][x].tile_type == type) {
                 tiles_matching++;
                 ranges[ranges_cnt].end = (BoardPos){x, y};
             } else {
@@ -95,7 +87,7 @@ int find_horiz_matches(BoardRange *ranges) {
                     ranges_cnt++;
                     ranges[ranges_cnt].end = (BoardPos){x, y};
                 }
-                type = board[y][x]->tile_type;
+                type = board[y][x].tile_type;
                 tiles_matching = 1;
                 ranges[ranges_cnt].start = (BoardPos){x, y};
             }
@@ -110,11 +102,11 @@ int find_horiz_matches(BoardRange *ranges) {
 int find_vert_matches(BoardRange *ranges) {
     int ranges_cnt = 0;
     for (int x = 0; x < BOARD_WIDTH; x++) {
-        TileType type = board[1][x]->tile_type;
+        TileType type = board[1][x].tile_type;
         ranges[ranges_cnt].start = (BoardPos){x, 1};
         int tiles_matching = 1;
         for (int y = 2; y < BOARD_HEIGHT; y++) {
-            if (board[y][x]->tile_type == type) {
+            if (board[y][x].tile_type == type) {
                 tiles_matching++;
                 ranges[ranges_cnt].end = (BoardPos){x, y};
             } else {
@@ -122,7 +114,7 @@ int find_vert_matches(BoardRange *ranges) {
                     ranges_cnt++;
                     ranges[ranges_cnt].end = (BoardPos){x, y};
                 }
-                type = board[y][x]->tile_type;
+                type = board[y][x].tile_type;
                 tiles_matching = 1;
                 ranges[ranges_cnt].start = (BoardPos){x, y};
             }
@@ -136,54 +128,30 @@ int find_vert_matches(BoardRange *ranges) {
 
 void delete_horiz_range(BoardRange range) {
     for (int x = range.start.x; x <= range.end.x; x++) {
-        Tile *tile = board[range.start.y][x];
-        tile->x = 0;
-        tile->y = 0;
-        tile->tile_type = EMPTY;
-        tile->falling = false;
-        tile->speed = 0;
-        tile->dest = 0;
-        board[range.start.y][x] = NULL;
+        board[range.start.y][x].x = 0;
+        board[range.start.y][x].y = 0;
+        board[range.start.y][x].tile_type = EMPTY;
+        board[range.start.y][x].falling = false;
+        board[range.start.y][x].speed = 0;
+        board[range.start.y][x].dest = 0;
     }
 }
 
 void delete_vert_range(BoardRange range) {
     for (int y = range.start.y; y <= range.end.y; y++) {
-        Tile *tile = board[y][range.start.x];
-        tile->x = 0;
-        tile->y = 0;
-        tile->tile_type = EMPTY;
-        tile->falling = false;
-        tile->speed = 0;
-        tile->dest = 0;
-        board[y][range.start.x] = NULL;
+        board[y][range.start.x].x = 0;
+        board[y][range.start.x].y = 0;
+        board[y][range.start.x].tile_type = EMPTY;
+        board[y][range.start.x].falling = false;
+        board[y][range.start.x].speed = 0;
+        board[y][range.start.x].dest = 0;
     }
 }
 
 void rotate_row_left(int row) {
-    Tile temp = *board[row][0];
-    int n = 1;
-    for (; n < BOARD_WIDTH; n++) {
-        board[row][n - 1]->x = board[row][n]->x;
-        board[row][n - 1]->y = board[row][n]->y;
-        board[row][n - 1]->tile_type = board[row][n]->tile_type;
-    }
-    board[row][n - 1]->x = temp.x;
-    board[row][n - 1]->y = temp.y;
-    board[row][n - 1]->tile_type = temp.tile_type;
 }
 
 void rotate_row_right(int row) {
-    Tile temp = *board[row][BOARD_WIDTH - 1];
-    int n = BOARD_WIDTH - 2;
-    for (; n > 1; n--) {
-        board[row][n - 1]->x = board[row][n]->x;
-        board[row][n - 1]->y = board[row][n]->y;
-        board[row][n - 1]->tile_type = board[row][n]->tile_type;
-    }
-    board[row][n - 1]->x = temp.x;
-    board[row][n - 1]->y = temp.y;
-    board[row][n - 1]->tile_type = temp.tile_type;
 }
 
 void init_game(void) {
@@ -195,15 +163,10 @@ void init_game(void) {
     tile_utility = LoadTexture("resources/tile_utility.png");
     arrow = LoadTexture("resources/arrow.png");
 
-    int tile_num = 0;
-    for (int y = 1; y < BOARD_HEIGHT; y++) {
+    for (int y = 0; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
-            TileType tile_type = rand() % NUM_TILE_TYPES;
-            if (tile_type != EMPTY) {
-                tiles[tile_num] = (Tile){ .x = x * CELL_SIZE, .y = y * CELL_SIZE, .tile_type = tile_type, .falling = false};
-                board[y][x] = &tiles[tile_num];
-                tile_num++;
-            }
+            TileType tile_type = y == 0 ? EMPTY : rand() % NUM_TILE_TYPES;
+            board[y][x] = (Tile){ .x = x * CELL_SIZE, .y = y * CELL_SIZE, .tile_type = tile_type, .falling = false};
         }
     }
 }
@@ -228,62 +191,58 @@ void update_game(void) {
         }
         for (int y = BOARD_HEIGHT - 2; y >= 0; y--) {
             for (int x = 0; x < BOARD_WIDTH; x++) {
-                if (board[y][x] == NULL) {
+                if (board[y][x].tile_type == EMPTY) {
                     continue;
                 }
-                if (board[y + 1][x] == NULL && board[y][x]->falling == false) {
-                    board[y][x]->falling = true;
-                    board[y][x]->speed = 1;
-                    board[y][x]->dest = (y + 1) * CELL_SIZE;
+                if (board[y + 1][x].tile_type == EMPTY && board[y][x].falling == false) {
+                    board[y][x].falling = true;
+                    board[y][x].speed = 1;
+                    board[y][x].dest = (y + 1) * CELL_SIZE;
                     if (y > 0) {
                         for (int n = y - 1; n >= 0; n--) {
-                            if (board[n][x] != NULL) {
-                                board[n][x]->falling = true;
-                                board[n][x]->speed = 1;
-                                board[n][x]->dest = (n + 1) * CELL_SIZE;
+                            if (board[n][x].tile_type != EMPTY) {
+                                board[n][x].falling = true;
+                                board[n][x].speed = 1;
+                                board[n][x].dest = (n + 1) * CELL_SIZE;
                             }
                         }
                     }
                 }
-                if (board[y][x]->falling == true) {
-                    board[y][x]->y += board[y][x]->speed;
-                    board[y][x]->speed *= 1.4;
-                    if (board[y][x]->y >= board[y][x]->dest) {
-                        board[y][x]->falling = false;
-                        board[y][x]->y = board[y][x]->dest;
-                        board[y][x]->dest = 0;
-                        board[y][x]->speed = 0;
+                if (board[y][x].falling == true) {
+                    board[y][x].y += board[y][x].speed;
+                    board[y][x].speed *= 1.4;
+                    if (board[y][x].y >= board[y][x].dest) {
+                        board[y][x].falling = false;
+                        board[y][x].y = board[y][x].dest;
+                        board[y][x].dest = 0;
+                        board[y][x].speed = 0;
                         board[y + 1][x] = board[y][x];
-                        board[y][x] = NULL;
+                        board[y][x].tile_type = EMPTY;
                     }
                 }
             }
         }
-        if (!tiles_falling()) {
+        if (!tiles_falling() && true) {
             // Add tiles
             for (int n = 0; n < BOARD_WIDTH; n++) {
-                if (board[1][n] == NULL) {
-                    int p = find_empty_tile();
-                    if (p >= 0) {
-                        tiles[p].tile_type = rand() % (NUM_TILE_TYPES - 1) + 1;
-                        tiles[p].x = n * CELL_SIZE;
-                        tiles[p].y = 0;
-                        tiles[p].speed = 0;
-                        tiles[p].dest = 0;
-                        tiles[p].falling = false;
-                        board[0][n] = &tiles[p];
-                    }
+                if (board[0][n].tile_type == EMPTY && board[1][n].tile_type == EMPTY) {
+                    board[0][n].tile_type = rand() % (NUM_TILE_TYPES - 1) + 1;
+                    board[0][n].x = n * CELL_SIZE;
+                    board[0][n].y = 0;
+                    board[0][n].speed = 0;
+                    board[0][n].dest = 0;
+                    board[0][n].falling = false;
                 }
             }
             // Destroy tiles
-            if (!empty_tiles_in_board()) {
+            if (!empty_tiles_in_board() && true) {
                 BoardRange horiz_ranges[BOARD_HEIGHT] = {0};
                 int num_horiz_ranges = find_horiz_matches(horiz_ranges);
                 for (int n = 0; n < num_horiz_ranges; n++) {
                     delete_horiz_range(horiz_ranges[n]);
                 }
             }
-            if (!empty_tiles_in_board()) {
+            if (!empty_tiles_in_board() && true) {
                 BoardRange vert_ranges[BOARD_WIDTH] = {0};
                 int num_vert_ranges = find_vert_matches(vert_ranges);
                 for (int n = 0; n < num_vert_ranges; n++) {
@@ -309,8 +268,8 @@ void draw_game(void) {
     for (int y = 0; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
             Texture2D *tile = NULL;
-            if (board[y][x] != NULL) {
-                switch (board[y][x]->tile_type) {
+            if (board[y][x].tile_type != EMPTY) {
+                switch (board[y][x].tile_type) {
                     case ATTACK:
                         tile = &tile_attack;
                         break;
@@ -325,10 +284,10 @@ void draw_game(void) {
                 }
             }
             if (tile) {
-                DrawTexture(*tile, pos_x + board[y][x]->x, pos_y + board[y][x]->y, WHITE);
-                const char *text = TextFormat("%d|%d\n(%d,%d)\n(%d,%d)", board[y][x]->tile_type, board[y][x]->falling, x, y, board[y][x]->x, board[y][x]->y);
+                DrawTexture(*tile, pos_x + board[y][x].x, pos_y + board[y][x].y, WHITE);
+                const char *text = TextFormat("%d|%d\n(%d,%d)\n(%d,%d)", board[y][x].tile_type, board[y][x].falling, x, y, board[y][x].x, board[y][x].y);
                 Vector2 text_size = MeasureTextEx(font, text, font.baseSize, 2);
-                DrawTextEx(font, text, (Vector2){pos_x + board[y][x]->x + HALF_CELL_SIZE - (text_size.x / 2), pos_y + board[y][x]->y + HALF_CELL_SIZE - (text_size.y / 2)}, font.baseSize, 2.0, WHITE);
+                DrawTextEx(font, text, (Vector2){pos_x + board[y][x].x + HALF_CELL_SIZE - (text_size.x / 2), pos_y + board[y][x].y + HALF_CELL_SIZE - (text_size.y / 2)}, font.baseSize, 2.0, WHITE);
             }
         }
     }
