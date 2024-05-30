@@ -185,7 +185,6 @@ int find_row_dest(int x, int start) {
             break;
         }
     }
-    printf("dest: %d\n", dest);
     return dest;
 }
 
