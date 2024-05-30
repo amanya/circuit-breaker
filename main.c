@@ -144,7 +144,7 @@ void delete_horiz_range(BoardRange range) {
         board.tiles[range.start.y][x].y = 0;
         board.tiles[range.start.y][x].tile_type = TILETYPE_EMPTY;
         board.tiles[range.start.y][x].falling = false;
-        board.tiles[range.start.y][x].hspeed = 0;
+        board.tiles[range.start.y][x].vspeed = 0;
         board.tiles[range.start.y][x].row_dest = 0;
     }
 }
@@ -155,7 +155,7 @@ void delete_vert_range(BoardRange range) {
         board.tiles[y][range.start.x].y = 0;
         board.tiles[y][range.start.x].tile_type = TILETYPE_EMPTY;
         board.tiles[y][range.start.x].falling = false;
-        board.tiles[y][range.start.x].hspeed = 0;
+        board.tiles[y][range.start.x].vspeed = 0;
         board.tiles[y][range.start.x].row_dest = 0;
     }
 }
@@ -230,26 +230,26 @@ void update_game(void) {
                 }
                 if (board.tiles[y + 1][x].tile_type == TILETYPE_EMPTY && board.tiles[y][x].falling == false) {
                     board.tiles[y][x].falling = true;
-                    board.tiles[y][x].hspeed = 1;
+                    board.tiles[y][x].vspeed = 1;
                     board.tiles[y][x].row_dest = find_row_dest(x, y) * CELL_SIZE;
                     if (y > 0) {
                         for (int n = y - 1; n >= 0; n--) {
                             if (board.tiles[n][x].tile_type != TILETYPE_EMPTY) {
                                 board.tiles[n][x].falling = true;
-                                board.tiles[n][x].hspeed = 1;
+                                board.tiles[n][x].vspeed = 1;
                                 board.tiles[n][x].row_dest = find_row_dest(x, n) * CELL_SIZE;
                             }
                         }
                     }
                 }
                 if (board.tiles[y][x].falling == true) {
-                    board.tiles[y][x].y += board.tiles[y][x].hspeed;
-                    board.tiles[y][x].hspeed *= 1.1 + ((float)rand()/(float)(RAND_MAX)) * 0.4;
+                    board.tiles[y][x].y += board.tiles[y][x].vspeed;
+                    board.tiles[y][x].vspeed *= 1.1 + ((float)rand()/(float)(RAND_MAX)) * 0.4;
                     if (board.tiles[y][x].y >= board.tiles[y][x].row_dest) {
                         board.tiles[y][x].falling = false;
                         board.tiles[y][x].y = board.tiles[y][x].row_dest;
                         board.tiles[y][x].row_dest = 0;
-                        board.tiles[y][x].hspeed = 0;
+                        board.tiles[y][x].vspeed = 0;
                         board.tiles[y + 1][x] = board.tiles[y][x];
                         board.tiles[y][x].tile_type = TILETYPE_EMPTY;
                     }
@@ -263,7 +263,7 @@ void update_game(void) {
                     board.tiles[0][n].tile_type = rand() % (TILETYPE_CNT - 1) + 1;
                     board.tiles[0][n].x = n * CELL_SIZE;
                     board.tiles[0][n].y = 0;
-                    board.tiles[0][n].hspeed = 0;
+                    board.tiles[0][n].vspeed = 0;
                     board.tiles[0][n].row_dest = 0;
                     board.tiles[0][n].falling = false;
                 }
