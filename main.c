@@ -178,13 +178,14 @@ void rotate_row_right(int row) {
     board.tiles[row][0].tile_type = temp.tile_type;
 }
 
-int find_row_dest(int row, int start) {
+int find_row_dest(int x, int start) {
     int dest = start;
-    for (; dest < BOARD_HEIGHT; dest++) {
-        if (board.tiles[dest + 1][row].tile_type != TILETYPE_EMPTY) {
+    for (; dest < BOARD_HEIGHT - 1; dest++) {
+        if (board.tiles[dest + 1][x].tile_type != TILETYPE_EMPTY) {
             break;
         }
     }
+    printf("dest: %d\n", dest);
     return dest;
 }
 
