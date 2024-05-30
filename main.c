@@ -53,7 +53,7 @@ Board board = {
     .cursor_row = 1,
 };
 
-bool empty_tiles_in_board() {
+bool board_tiles_empty() {
     for (int y = 1; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
             if (board.tiles[y][x].tile_type == TILETYPE_EMPTY) {
@@ -64,7 +64,7 @@ bool empty_tiles_in_board() {
     return false;
 }
 
-bool tiles_falling() {
+bool board_tiles_falling() {
     for (int y = 1; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
             if (board.tiles[y][x].falling == true) {
@@ -256,7 +256,7 @@ void update_game(void) {
                 }
             }
         }
-        if (!tiles_falling() && true) {
+        if (!board_tiles_falling() && true) {
             // Add tiles
             for (int n = 0; n < BOARD_WIDTH; n++) {
                 if (board.tiles[0][n].tile_type == TILETYPE_EMPTY && board.tiles[1][n].tile_type == TILETYPE_EMPTY) {
@@ -269,14 +269,14 @@ void update_game(void) {
                 }
             }
             // Destroy tiles
-            if (!empty_tiles_in_board() && true) {
+            if (!board_tiles_empty() && true) {
                 BoardRange horiz_ranges[BOARD_HEIGHT] = {0};
                 int num_horiz_ranges = find_horiz_matches(horiz_ranges);
                 for (int n = 0; n < num_horiz_ranges; n++) {
                     delete_horiz_range(horiz_ranges[n]);
                 }
             }
-            if (!empty_tiles_in_board() && true) {
+            if (!board_tiles_empty() && true) {
                 BoardRange vert_ranges[BOARD_WIDTH] = {0};
                 int num_vert_ranges = find_vert_matches(vert_ranges);
                 for (int n = 0; n < num_vert_ranges; n++) {
