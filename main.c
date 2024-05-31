@@ -4,9 +4,11 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "circuitbreaker.h"
+
 typedef struct {
-    const uint16_t screen_width;
-    const uint16_t screen_height;
+    const uint16 screen_width;
+    const uint16 screen_height;
     bool game_over;
     Font font;
 } Game;
