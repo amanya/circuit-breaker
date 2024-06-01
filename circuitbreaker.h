@@ -1,8 +1,14 @@
-#include <stdbool.h>
 #if !defined(CIRCUITBREAKER_H)
 #define CIRCUITBREAKER_H
 
+#include <stdbool.h>
 #include <stdint.h>
+
+#define BOARD_WIDTH 4
+#define BOARD_HEIGHT 5
+#define CELL_SIZE 64
+#define HALF_CELL_SIZE 32
+
 
 #if defined(CIRCUITBREAKER_SLOW)
 #define Assert(Expression) if(!(Expression)) {*(volatile int *)0 = 0;}
@@ -32,6 +38,10 @@ typedef uint64_t uint64;
 
 typedef float real32;
 typedef float real64;
+
+void board_init();
+void board_update();
+void board_draw(uint16 pos_x, uint16 pos_y);
 
 struct GameMemory {
 	bool32 is_initialized;
