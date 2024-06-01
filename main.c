@@ -6,6 +6,11 @@
 
 #include "circuitbreaker.h"
 
+#define BOARD_WIDTH 4
+#define BOARD_HEIGHT 5
+#define CELL_SIZE 64
+#define HALF_CELL_SIZE 32
+
 typedef struct {
     const uint16 screen_width;
     const uint16 screen_height;
@@ -13,7 +18,7 @@ typedef struct {
     Font font;
 } Game;
 
-static Game game = {
+global_variable Game game = {
     .screen_width = 800,
     .screen_height = 460,
     .game_over = true,
@@ -27,14 +32,9 @@ typedef enum {
     TILETYPE_CNT,
 } TileType;
 
-#define BOARD_WIDTH 4
-#define BOARD_HEIGHT 5
-#define CELL_SIZE 64
-#define HALF_CELL_SIZE 32
-
 typedef struct {
-    int x, y;
-    int row_dest; 
+    uint32 x, y;
+    uint32 row_dest; 
     float hspeed;
     float vspeed;
     TileType tile_type;
@@ -46,7 +46,7 @@ typedef struct {
     Texture2D tile_textures[TILETYPE_CNT];
     Texture2D arrow_texture;
     Tile tiles[BOARD_HEIGHT][BOARD_WIDTH];
-    int cursor_row;
+    uint32 cursor_row;
 } Board;
 
 Board board = {
@@ -54,6 +54,15 @@ Board board = {
     .tiles = {0},
     .cursor_row = 1,
 };
+
+typedef struct {
+    uint32 x, y;
+} BoardPos;
+
+typedef struct {
+    BoardPos start;
+    BoardPos end;
+} BoardRange;
 
 bool board_tiles_empty() {
     for (int y = 1; y < BOARD_HEIGHT; y++) {
@@ -77,16 +86,7 @@ bool board_tiles_falling() {
     return false;
 }
 
-typedef struct {
-    int x, y;
-} BoardPos;
-
-typedef struct {
-    BoardPos start;
-    BoardPos end;
-} BoardRange;
-
-int find_horiz_matches(BoardRange *ranges) {
+int board_find_horiz_matches(BoardRange *ranges) {
     int ranges_cnt = 0;
     for (int y = 1; y < BOARD_HEIGHT; y++) {
         TileType type = board.tiles[y][0].tile_type;
@@ -113,7 +113,7 @@ int find_horiz_matches(BoardRange *ranges) {
     return ranges_cnt;
 }
 
-int find_vert_matches(BoardRange *ranges) {
+int board_find_vert_matches(BoardRange *ranges) {
     int ranges_cnt = 0;
     for (int x = 0; x < BOARD_WIDTH; x++) {
         TileType type = board.tiles[1][x].tile_type;
@@ -140,7 +140,7 @@ int find_vert_matches(BoardRange *ranges) {
     return ranges_cnt;
 }
 
-void delete_horiz_range(BoardRange range) {
+void board_delete_horiz_range(BoardRange range) {
     for (int x = range.start.x; x <= range.end.x; x++) {
         board.tiles[range.start.y][x].x = 0;
         board.tiles[range.start.y][x].y = 0;
@@ -151,7 +151,7 @@ void delete_horiz_range(BoardRange range) {
     }
 }
 
-void delete_vert_range(BoardRange range) {
+void board_delete_vert_range(BoardRange range) {
     for (int y = range.start.y; y <= range.end.y; y++) {
         board.tiles[y][range.start.x].x = 0;
         board.tiles[y][range.start.x].y = 0;
@@ -162,7 +162,7 @@ void delete_vert_range(BoardRange range) {
     }
 }
 
-void rotate_row_left(int row) {
+void board_rotate_row_left(int row) {
     Tile temp = board.tiles[row][0];
     int n = 1;
     for (; n < BOARD_WIDTH; n++) {
@@ -171,7 +171,7 @@ void rotate_row_left(int row) {
     board.tiles[row][n - 1].tile_type = temp.tile_type;
 }
 
-void rotate_row_right(int row) {
+void board_rotate_row_right(int row) {
     Tile temp = board.tiles[row][BOARD_WIDTH - 1];
     int n = BOARD_WIDTH - 2;
     for (; n >= 0; n--) {
@@ -180,7 +180,7 @@ void rotate_row_right(int row) {
     board.tiles[row][0].tile_type = temp.tile_type;
 }
 
-int find_row_dest(int x, int start) {
+int board_find_row_dest(int x, int start) {
     int dest = start;
     for (; dest < BOARD_HEIGHT - 1; dest++) {
         if (board.tiles[dest + 1][x].tile_type != TILETYPE_EMPTY) {
@@ -190,7 +190,7 @@ int find_row_dest(int x, int start) {
     return dest;
 }
 
-void init_game(void) {
+void game_init(void) {
     time_t t;
     srand((unsigned) time(&t));
     game.font = LoadFont("resources/fonts/mecha.png");
@@ -207,7 +207,7 @@ void init_game(void) {
     }
 }
 
-void update_game(void) {
+void game_update(void) {
     if (!game.game_over && true) {
         if (IsKeyPressed(KEY_UP)) {
             if (board.cursor_row > 1) {
@@ -220,10 +220,10 @@ void update_game(void) {
             }
         }
         if (IsKeyPressed(KEY_LEFT)) {
-            rotate_row_left(board.cursor_row);
+            board_rotate_row_left(board.cursor_row);
         }
         if (IsKeyPressed(KEY_RIGHT)) {
-            rotate_row_right(board.cursor_row);
+            board_rotate_row_right(board.cursor_row);
         }
         for (int y = BOARD_HEIGHT - 2; y >= 0; y--) {
             for (int x = 0; x < BOARD_WIDTH; x++) {
@@ -233,13 +233,13 @@ void update_game(void) {
                 if (board.tiles[y + 1][x].tile_type == TILETYPE_EMPTY && board.tiles[y][x].falling == false) {
                     board.tiles[y][x].falling = true;
                     board.tiles[y][x].vspeed = 1;
-                    board.tiles[y][x].row_dest = find_row_dest(x, y) * CELL_SIZE;
+                    board.tiles[y][x].row_dest = board_find_row_dest(x, y) * CELL_SIZE;
                     if (y > 0) {
                         for (int n = y - 1; n >= 0; n--) {
                             if (board.tiles[n][x].tile_type != TILETYPE_EMPTY) {
                                 board.tiles[n][x].falling = true;
                                 board.tiles[n][x].vspeed = 1;
-                                board.tiles[n][x].row_dest = find_row_dest(x, n) * CELL_SIZE;
+                                board.tiles[n][x].row_dest = board_find_row_dest(x, n) * CELL_SIZE;
                             }
                         }
                     }
@@ -273,28 +273,28 @@ void update_game(void) {
             // Destroy tiles
             if (!board_tiles_empty() && true) {
                 BoardRange horiz_ranges[BOARD_HEIGHT] = {0};
-                int num_horiz_ranges = find_horiz_matches(horiz_ranges);
+                int num_horiz_ranges = board_find_horiz_matches(horiz_ranges);
                 for (int n = 0; n < num_horiz_ranges; n++) {
-                    delete_horiz_range(horiz_ranges[n]);
+                    board_delete_horiz_range(horiz_ranges[n]);
                 }
             }
             if (!board_tiles_empty() && true) {
                 BoardRange vert_ranges[BOARD_WIDTH] = {0};
-                int num_vert_ranges = find_vert_matches(vert_ranges);
+                int num_vert_ranges = board_find_vert_matches(vert_ranges);
                 for (int n = 0; n < num_vert_ranges; n++) {
-                    delete_vert_range(vert_ranges[n]);
+                    board_delete_vert_range(vert_ranges[n]);
                 }
             }
         }
     } else {
         if (IsKeyPressed(KEY_ENTER)) {
-            init_game();
+            game_init();
             game.game_over = false;
         }
     }
 }
 
-void draw_game(void) {
+void game_draw(void) {
     BeginDrawing();
     ClearBackground(BLACK);
 
@@ -320,20 +320,20 @@ void draw_game(void) {
     EndDrawing();
 }
 
-void update_draw_game(void) {
-    update_game();
-    draw_game();
+void game_update_and_draw(void) {
+    game_update();
+    game_draw();
 }
 
 int main(int argc, char *argv[]) {
     InitWindow(game.screen_width, game.screen_height, "Circuit Breaker");
 
-    init_game();
+    game_init();
 
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
-        update_draw_game();
+        game_update_and_draw();
     }
 
     CloseWindow();
