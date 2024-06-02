@@ -15,7 +15,7 @@ typedef struct {
 global_variable Game game = {
     .screen_width = 800,
     .screen_height = 460,
-    .game_over = true,
+    .game_over = false,
 };
 
 void game_init(void) {
