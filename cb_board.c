@@ -37,6 +37,7 @@ typedef enum {
 typedef struct {
     real32 x, y;
     uint32 row_dest; 
+    uint32 frame;
     real32 vspeed;
     TileType tile_type;
     bool falling;
@@ -65,6 +66,7 @@ typedef struct {
     uint32 cursor_row;
     uint32 horiz_ranges_cnt;
     uint32 vert_ranges_cnt;
+    uint32 break_iterations;
     BoardRange horiz_ranges[BOARD_HEIGHT];
     BoardRange vert_ranges[BOARD_WIDTH];
     BoardRotationDirection direction;
@@ -90,6 +92,8 @@ void board_find_horiz_matches();
 void board_find_vert_matches();
 void board_delete_horiz_range(BoardRange range);
 void board_delete_vert_range(BoardRange range);
+void board_anime_horiz_range(BoardRange range);
+void board_anime_vert_range(BoardRange range);
 
 void board_debug_print() {
     printf("Board state: %d\n", board.state);
@@ -124,9 +128,9 @@ void board_range_print() {
 }
 
 void board_init() {
-    board.tile_textures[TILETYPE_ATTACK] = LoadTexture("resources/tile_attack.png");
-    board.tile_textures[TILETYPE_ACTION] = LoadTexture("resources/tile_action.png");
-    board.tile_textures[TILETYPE_UTILITY] = LoadTexture("resources/tile_utility.png");
+    board.tile_textures[TILETYPE_ATTACK] = LoadTexture("resources/tilesheet_attack.png");
+    board.tile_textures[TILETYPE_ACTION] = LoadTexture("resources/tilesheet_action.png");
+    board.tile_textures[TILETYPE_UTILITY] = LoadTexture("resources/tilesheet_utility.png");
     board.arrow_texture = LoadTexture("resources/arrow.png");
 
     for (int y = 0; y < BOARD_HEIGHT; y++) {
@@ -264,19 +268,35 @@ void board_update() {
                 board.tiles[0][n].vspeed = 0;
                 board.tiles[0][n].row_dest = 0;
                 board.tiles[0][n].falling = false;
+                board.tiles[0][n].frame = 0;
             }
         }
         board.state = BOARDSTATE_IDLE;
     }
     if (board.state == BOARDSTATE_BREAKING) {
         // Destroy tiles
-        for (int n = 0; n < board.horiz_ranges_cnt; n++) {
-            board_delete_horiz_range(board.horiz_ranges[n]);
+        if (board.break_iterations > 10) {
+            for (int n = 0; n < board.horiz_ranges_cnt; n++) {
+                board_delete_horiz_range(board.horiz_ranges[n]);
+            }
+            for (int n = 0; n < board.vert_ranges_cnt; n++) {
+                board_delete_vert_range(board.vert_ranges[n]);
+            }
+            board.state = BOARDSTATE_IDLE;
+            board.break_iterations = 0;
+        } else {
+            for (int n = 0; n < board.horiz_ranges_cnt; n++) {
+                if(board.break_iterations % 5 == 0) {
+                    board_anime_horiz_range(board.horiz_ranges[n]);
+                }
+            }
+            for (int n = 0; n < board.vert_ranges_cnt; n++) {
+                if(board.break_iterations % 5 == 0) {
+                    board_anime_vert_range(board.vert_ranges[n]);
+                }
+            }
+            board.break_iterations++;
         }
-        for (int n = 0; n < board.vert_ranges_cnt; n++) {
-            board_delete_vert_range(board.vert_ranges[n]);
-        }
-        board.state = BOARDSTATE_IDLE;
     }
     board_debug_print();
     board_find_horiz_matches();
@@ -290,7 +310,7 @@ void board_draw(uint16 pos_x, uint16 pos_y) {
             Texture2D *tile = NULL;
             if (board.tiles[y][x].tile_type != TILETYPE_EMPTY) {
                 tile = &board.tile_textures[board.tiles[y][x].tile_type];
-                Rectangle source = { .x = 0, .y = 0, .width = CELL_SIZE, .height = CELL_SIZE };
+                Rectangle source = { .x = (board.tiles[y][x].frame % 3) * CELL_SIZE, .y = 0, .width = CELL_SIZE, .height = CELL_SIZE };
                 Vector2 position = { .x = pos_x + board.tiles[y][x].x, .y = pos_y + board.tiles[y][x].y };
                 if (board.tiles[y][x].x < 0) {
                     int32 clamp = fabsf(board.tiles[y][x].x);
@@ -434,6 +454,18 @@ void board_find_vert_matches() {
     board.vert_ranges_cnt = ranges_cnt;
 }
 
+void board_anime_horiz_range(BoardRange range) {
+    for (int x = range.start.x; x <= range.end.x; x++) {
+        board.tiles[range.start.y][x].frame++;
+    }
+}
+
+void board_anime_vert_range(BoardRange range) {
+    for (int y = range.start.y; y <= range.end.y; y++) {
+        board.tiles[y][range.start.x].frame++;
+    }
+}
+
 void board_delete_horiz_range(BoardRange range) {
     for (int x = range.start.x; x <= range.end.x; x++) {
         board.tiles[range.start.y][x].x = 0;
@@ -442,6 +474,7 @@ void board_delete_horiz_range(BoardRange range) {
         board.tiles[range.start.y][x].falling = false;
         board.tiles[range.start.y][x].vspeed = 0;
         board.tiles[range.start.y][x].row_dest = 0;
+        board.tiles[range.start.y][x].frame = 0;
     }
 }
 
@@ -453,6 +486,7 @@ void board_delete_vert_range(BoardRange range) {
         board.tiles[y][range.start.x].falling = false;
         board.tiles[y][range.start.x].vspeed = 0;
         board.tiles[y][range.start.x].row_dest = 0;
+        board.tiles[y][range.start.x].frame = 0;
     }
 }
 
