@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "raylib.h"
 #include "circuitbreaker.h"
@@ -34,7 +35,7 @@ typedef enum {
 } TileType;
 
 typedef struct {
-    int32 x, y;
+    real32 x, y;
     uint32 row_dest; 
     real32 vspeed;
     TileType tile_type;
@@ -94,7 +95,7 @@ void board_debug_print() {
     printf("Board state: %d\n", board.state);
     for (int y  = 0; y < BOARD_HEIGHT; y++) {
         for (int x  = 0; x < BOARD_WIDTH; x++) {
-            printf("%d%c(%3d,%3d) ",
+            printf("%d%c(%3f,%3f) ",
                    board.tiles[y][x].tile_type,
                    board.tiles[y][x].falling ? 'f' : ' ',
                    board.tiles[y][x].x,
@@ -227,11 +228,11 @@ void board_update() {
     }
     if (board.state == BOARDSTATE_ROTATING) {
         if (board.direction == ROTATING_LEFT) {
+            board.hspeed *= 1.2;
             for (int n = 0; n < BOARD_WIDTH; n++) {
-                board.hspeed *= 1.04;
                 board.tiles[board.cursor_row][n].x -= board.hspeed;
             }
-            if (board.tiles[board.cursor_row][0].x <= -CELL_SIZE) {
+            if (board.tiles[board.cursor_row][1].x <= 0) {
                 for (int n = 0; n < BOARD_WIDTH; n++) {
                     board.tiles[board.cursor_row][n].x = n * CELL_SIZE;
                 }
@@ -240,8 +241,8 @@ void board_update() {
             }
         }
         else if (board.direction == ROTATING_RIGHT) {
+            board.hspeed *= 1.2;
             for (int n = 0; n < BOARD_WIDTH; n++) {
-                board.hspeed *= 1.04;
                 board.tiles[board.cursor_row][n].x += board.hspeed;
             }
             if (board.tiles[board.cursor_row][0].x >= CELL_SIZE) {
@@ -289,7 +290,46 @@ void board_draw(uint16 pos_x, uint16 pos_y) {
             Texture2D *tile = NULL;
             if (board.tiles[y][x].tile_type != TILETYPE_EMPTY) {
                 tile = &board.tile_textures[board.tiles[y][x].tile_type];
-                DrawTexture(*tile, pos_x + board.tiles[y][x].x, pos_y + board.tiles[y][x].y, WHITE);
+                Rectangle source = { .x = 0, .y = 0, .width = CELL_SIZE, .height = CELL_SIZE };
+                Vector2 position = { .x = pos_x + board.tiles[y][x].x, .y = pos_y + board.tiles[y][x].y };
+                if (board.tiles[y][x].x < 0) {
+                    int32 clamp = fabsf(board.tiles[y][x].x);
+                    source.x = clamp;
+                    source.width = CELL_SIZE - clamp;
+                    position.x = pos_x;
+                    Rectangle source2 = {
+                        .x = 0,
+                        .y = 0,
+                        .width = clamp,
+                        .height = CELL_SIZE
+                    };
+                    Vector2 position2 = {
+                        .x = pos_x + board.tiles[y][BOARD_WIDTH - 1].x + CELL_SIZE,
+                        .y = pos_y + board.tiles[y][x].y,
+                    };
+                    DrawTextureRec(*tile, source2, position2, WHITE);
+                    printf("Source .x %f .width %f\n", source2.x, source2.width);
+                    printf("Position .x %f .y %f\n", position2.x, position2.y);
+                }
+                else if (board.tiles[y][x].x > (BOARD_WIDTH - 1) * CELL_SIZE) {
+                    int32 clamp = board.tiles[y][x].x - (BOARD_WIDTH - 1) * CELL_SIZE;
+                    source.x = 0;
+                    source.width = CELL_SIZE - clamp;
+                    Rectangle source2 = {
+                        .x = CELL_SIZE - clamp,
+                        .y = 0,
+                        .width = clamp,
+                        .height = CELL_SIZE
+                    };
+                    Vector2 position2 = {
+                        .x = pos_x,
+                        .y = pos_y + board.tiles[y][x].y,
+                    };
+                    DrawTextureRec(*tile, source2, position2, WHITE);
+                    printf("Source .x %f .width %f\n", source2.x, source2.width);
+                    printf("Position .x %f .y %f\n", position2.x, position2.y);
+                }
+                DrawTextureRec(*tile, source, position, WHITE);
             }
         }
     }
