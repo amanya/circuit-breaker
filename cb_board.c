@@ -34,10 +34,9 @@ typedef enum {
 } TileType;
 
 typedef struct {
-    uint32 x, y;
+    int32 x, y;
     uint32 row_dest; 
-    float hspeed;
-    float vspeed;
+    real32 vspeed;
     TileType tile_type;
     bool falling;
     bool hrotating;
@@ -52,6 +51,11 @@ typedef struct {
     BoardPos end;
 } BoardRange;
 
+typedef enum {
+    ROTATING_LEFT,
+    ROTATING_RIGHT,
+} BoardRotationDirection;
+
 typedef struct {
     BoardState state;
     Texture2D tile_textures[TILETYPE_CNT];
@@ -62,6 +66,8 @@ typedef struct {
     uint32 vert_ranges_cnt;
     BoardRange horiz_ranges[BOARD_HEIGHT];
     BoardRange vert_ranges[BOARD_WIDTH];
+    BoardRotationDirection direction;
+    real32 hspeed;
 } Board;
 
 Board board = {
@@ -85,6 +91,7 @@ void board_delete_horiz_range(BoardRange range);
 void board_delete_vert_range(BoardRange range);
 
 void board_debug_print() {
+    printf("Board state: %d\n", board.state);
     for (int y  = 0; y < BOARD_HEIGHT; y++) {
         for (int x  = 0; x < BOARD_WIDTH; x++) {
             printf("%d%c(%3d,%3d) ",
@@ -165,12 +172,16 @@ void board_update() {
     }
     if (IsKeyPressed(KEY_LEFT)) {
         if (board.state == BOARDSTATE_IDLE) {
-            board_rotate_row_left(board.cursor_row);
+            board.state = BOARDSTATE_ROTATING;
+            board.hspeed = 1;
+            board.direction = ROTATING_LEFT;
         }
     }
     if (IsKeyPressed(KEY_RIGHT)) {
         if (board.state == BOARDSTATE_IDLE) {
-            board_rotate_row_right(board.cursor_row);
+            board.state = BOARDSTATE_ROTATING;
+            board.hspeed = 1;
+            board.direction = ROTATING_RIGHT;
         }
     }
     if (board.state == BOARDSTATE_IDLE) {
@@ -201,7 +212,7 @@ void board_update() {
             for (int x = 0; x < BOARD_WIDTH; x++) {
                 if (board.tiles[y][x].falling == true) {
                     board.tiles[y][x].y += board.tiles[y][x].vspeed;
-                    board.tiles[y][x].vspeed *= 1.1 + ((float)rand()/(float)(RAND_MAX)) * 0.4;
+                    board.tiles[y][x].vspeed *= 1.1 + ((real32)rand()/(real32)(RAND_MAX)) * 0.4;
                     if (board.tiles[y][x].y >= board.tiles[y][x].row_dest) {
                         board.tiles[y][x].falling = false;
                         board.tiles[y][x].y = board.tiles[y][x].row_dest;
@@ -211,6 +222,34 @@ void board_update() {
                         board.tiles[y][x].tile_type = TILETYPE_EMPTY;
                     }
                 }
+            }
+        }
+    }
+    if (board.state == BOARDSTATE_ROTATING) {
+        if (board.direction == ROTATING_LEFT) {
+            for (int n = 0; n < BOARD_WIDTH; n++) {
+                board.hspeed *= 1.04;
+                board.tiles[board.cursor_row][n].x -= board.hspeed;
+            }
+            if (board.tiles[board.cursor_row][0].x <= -CELL_SIZE) {
+                for (int n = 0; n < BOARD_WIDTH; n++) {
+                    board.tiles[board.cursor_row][n].x = n * CELL_SIZE;
+                }
+                board_rotate_row_left(board.cursor_row);
+                board.state = BOARDSTATE_IDLE;
+            }
+        }
+        else if (board.direction == ROTATING_RIGHT) {
+            for (int n = 0; n < BOARD_WIDTH; n++) {
+                board.hspeed *= 1.04;
+                board.tiles[board.cursor_row][n].x += board.hspeed;
+            }
+            if (board.tiles[board.cursor_row][0].x >= CELL_SIZE) {
+                for (int n = 0; n < BOARD_WIDTH; n++) {
+                    board.tiles[board.cursor_row][n].x = n * CELL_SIZE;
+                }
+                board_rotate_row_right(board.cursor_row);
+                board.state = BOARDSTATE_IDLE;
             }
         }
     }
