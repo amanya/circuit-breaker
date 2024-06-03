@@ -40,7 +40,7 @@ typedef float real32;
 typedef float real64;
 
 void board_init();
-void board_update();
+void board_update(real64 elapsed_time);
 void board_draw(uint16 pos_x, uint16 pos_y);
 
 struct GameMemory {

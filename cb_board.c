@@ -164,7 +164,7 @@ void board_update_state() {
     }
 }
 
-void board_update() {
+void board_update(real64 elapsed_time) {
     if (IsKeyPressed(KEY_UP)) {
         if (board.cursor_row > 1) {
             board.cursor_row--;
@@ -178,14 +178,14 @@ void board_update() {
     if (IsKeyPressed(KEY_LEFT)) {
         if (board.state == BOARDSTATE_IDLE) {
             board.state = BOARDSTATE_ROTATING;
-            board.hspeed = 1;
+            board.hspeed = 1 * elapsed_time;
             board.direction = ROTATING_LEFT;
         }
     }
     if (IsKeyPressed(KEY_RIGHT)) {
         if (board.state == BOARDSTATE_IDLE) {
             board.state = BOARDSTATE_ROTATING;
-            board.hspeed = 1;
+            board.hspeed = 1 * elapsed_time;
             board.direction = ROTATING_RIGHT;
         }
     }
@@ -197,7 +197,7 @@ void board_update() {
                 }
                 if (board.tiles[y + 1][x].tile_type == TILETYPE_EMPTY && board.tiles[y][x].falling == false) {
                     board.tiles[y][x].falling = true;
-                    board.tiles[y][x].vspeed = 1;
+                    board.tiles[y][x].vspeed = 1 * elapsed_time;
                     board.tiles[y][x].row_dest = board_find_row_dest(x, y) * CELL_SIZE;
                     if (y > 0) {
                         for (int n = y - 1; n >= 0; n--) {

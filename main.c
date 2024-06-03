@@ -8,8 +8,11 @@
 typedef struct {
     const uint16 screen_width;
     const uint16 screen_height;
-    bool game_over;
+    real64 last_time;
+    real64 elapsed_time;
+    real64 current_time;
     Font font;
+    bool game_over;
 } Game;
 
 global_variable Game game = {
@@ -28,7 +31,7 @@ void game_init(void) {
 
 void game_update(void) {
     if (!game.game_over && true) {
-        board_update();
+        board_update(game.elapsed_time);
     } else {
         if (IsKeyPressed(KEY_ENTER)) {
             game_init();
@@ -52,6 +55,8 @@ void game_draw(void) {
 void game_update_and_draw(void) {
     game_update();
     game_draw();
+
+    //SwapScreenBuffer();
 }
 
 int main(int argc, char *argv[]) {
@@ -61,8 +66,13 @@ int main(int argc, char *argv[]) {
 
     SetTargetFPS(60);
 
+    game.last_time = GetTime();
     while (!WindowShouldClose()) {
+        game.current_time = GetTime();
+        game.elapsed_time = game.current_time - game.last_time;
+        //PollInputEvents();
         game_update_and_draw();
+        game.last_time = game.current_time;
     }
 
     CloseWindow();
