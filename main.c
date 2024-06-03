@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <time.h>
 
 #include "circuitbreaker.h"
@@ -11,6 +12,8 @@ typedef struct {
     real64 last_time;
     real64 elapsed_time;
     real64 current_time;
+    real64 wait_time;
+    real64 delta_time;
     Font font;
     bool game_over;
 } Game;
@@ -31,7 +34,7 @@ void game_init(void) {
 
 void game_update(void) {
     if (!game.game_over && true) {
-        board_update(game.elapsed_time);
+        board_update(game.delta_time);
     } else {
         if (IsKeyPressed(KEY_ENTER)) {
             game_init();
@@ -64,15 +67,35 @@ int main(int argc, char *argv[]) {
 
     game_init();
 
-    SetTargetFPS(60);
+    //SetTargetFPS(60);
+    real64 target_fps = 60;
 
     game.last_time = GetTime();
     while (!WindowShouldClose()) {
-        game.current_time = GetTime();
-        game.elapsed_time = game.current_time - game.last_time;
         //PollInputEvents();
         game_update_and_draw();
+
+        game.current_time = GetTime();
+        game.elapsed_time = game.current_time - game.last_time;
+
+        if (target_fps > 0.0) {
+            game.wait_time = (1.0f/(real64)target_fps) - game.elapsed_time;
+            if (game.wait_time > 0.0) {
+                WaitTime(game.wait_time);
+                game.current_time = GetTime();
+                game.delta_time = (real64)(game.current_time - game.last_time);
+            }
+        } else {
+            game.delta_time = game.elapsed_time;
+        }
+
         game.last_time = game.current_time;
+
+        printf("DT: %f CT: %f LT: %f ET: %f\n",
+               game.delta_time,
+               game.current_time,
+               game.last_time,
+               game.elapsed_time);
     }
 
     CloseWindow();
