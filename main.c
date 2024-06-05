@@ -1,7 +1,6 @@
 #include "raylib.h"
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <time.h>
 
 #include "circuitbreaker.h"
@@ -58,8 +57,6 @@ void game_draw(void) {
 void game_update_and_draw(void) {
     game_update();
     game_draw();
-
-    //SwapScreenBuffer();
 }
 
 int main(int argc, char *argv[]) {
@@ -67,12 +64,10 @@ int main(int argc, char *argv[]) {
 
     game_init();
 
-    //SetTargetFPS(60);
     real64 target_fps = 60;
 
     game.last_time = GetTime();
     while (!WindowShouldClose()) {
-        //PollInputEvents();
         game_update_and_draw();
 
         game.current_time = GetTime();
@@ -91,11 +86,6 @@ int main(int argc, char *argv[]) {
 
         game.last_time = game.current_time;
 
-        printf("DT: %f CT: %f LT: %f ET: %f\n",
-               game.delta_time,
-               game.current_time,
-               game.last_time,
-               game.elapsed_time);
     }
 
     CloseWindow();
