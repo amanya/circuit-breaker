@@ -43,6 +43,10 @@ void board_init();
 void board_update(real64 elapsed_time);
 void board_draw(uint16 pos_x, uint16 pos_y);
 
+void street_init();
+void street_update(real64 elapsed_time);
+void street_draw(uint16 pos_x, uint16 pos_y);
+
 struct GameMemory {
 	bool32 is_initialized;
 

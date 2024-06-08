@@ -18,8 +18,8 @@ typedef struct {
 } Game;
 
 global_variable Game game = {
-    .screen_width = 800,
-    .screen_height = 460,
+    .screen_width = 1280,
+    .screen_height = 720,
     .game_over = false,
 };
 
@@ -29,11 +29,13 @@ void game_init(void) {
     game.font = LoadFont("resources/fonts/mecha.png");
 
     board_init();
+    street_init();
 }
 
 void game_update(void) {
     if (!game.game_over && true) {
         board_update(game.delta_time);
+        street_update(game.delta_time);
     } else {
         if (IsKeyPressed(KEY_ENTER)) {
             game_init();
@@ -46,10 +48,13 @@ void game_draw(void) {
     BeginDrawing();
     ClearBackground(BLACK);
 
-    uint16_t pos_x = game.screen_width / 2 - (HALF_CELL_SIZE * BOARD_WIDTH);
-    uint16_t pos_y = game.screen_height / 2 - (HALF_CELL_SIZE * (BOARD_HEIGHT + 1));
+    uint16 pos_x = game.screen_width / 2 - (HALF_CELL_SIZE * BOARD_WIDTH);
+    uint16 pos_y = ((game.screen_height / 8) * 6) - (HALF_CELL_SIZE * (BOARD_HEIGHT + 1));
 
     board_draw(pos_x, pos_y);
+
+    pos_y = 16;
+    street_draw(pos_x, pos_y);
 
     EndDrawing();
 }
